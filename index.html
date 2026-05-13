@@ -246,14 +246,39 @@
     }
   }
 
-  function exportarNotas() {
+  async function exportarNotas() {
     const dados = JSON.stringify(notas, null, 2);
     const blob = new Blob([dados], { type: 'application/json' });
 
+    const ficheiro = new File([blob], 'notas.json', {
+      type: 'application/json'
+    });
+
+    // Android e telemóveis
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [ficheiro] })) {
+      try {
+        await navigator.share({
+          title: 'Notas',
+          text: 'Exportação das notas',
+          files: [ficheiro]
+        });
+        return;
+      } catch (e) {
+        console.log('Partilha cancelada');
+      }
+    }
+
+    // PCs e navegadores compatíveis
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'notas.json';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+    }, 1000);
   }
 
   document.getElementById('importar').addEventListener('change', function(e) {
